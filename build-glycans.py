@@ -225,12 +225,16 @@ def theMaestro(itpList,pair,bond0,VS0,maxResnum,maxID,resnum0,pdbLines,glycanCoo
 
     print('I lost my shoe')
 
-    rRes=pair.split('-')[0]
-    bond1=pair.split('-')[1]
-    nrRes=pair.split('-')[2]
+    ### 29.06.20 changes to account for the new library of glycans
+    rRes=re.split('\d',pair)[0][:-1] # this should get the residue to be added, and remove the 'a' or 'b' from the end
+    bond1='%s%s'%(re.split('\d',pair)[0][-1],re.split('[A-z]',pair)[0]) # this should get the 'a'/'b' and the bond number
+    nrRes=re.split('\d',pair)[1] # this should get the residue already present in the chain, with no numbers or anomeric identifiers
+    #rRes=pair.split('-')[0]
+    #bond1=pair.split('-')[1]
+    #nrRes=pair.split('-')[2]
 
     # itp stuff
-    itpLines=linesFromFile('%s.itp'%(rRes)) # changed nrRes to rRes, because I think that makes sense???
+    itpLines=linesFromFile('%s.itp'%(rRes)) # get the topology information for the residue being added, which is named the same as in the library
     newResnum=int(maxResnum)+1
     newID={}
     for a in linesBetween(itpLines,'[ atoms ]','[ bonds ]'):
@@ -275,108 +279,69 @@ angleDict={
         }
 
 mapDict={
-        'GlcA':'GCA',
-        'IdoA':'GCA',
-        'Glc':'GMY',
-        'Man':'GMY',
-        'Gal':'GMY',
-        'All':'GMY',
-        'Alt':'GMY',
-        'GlcNAc':'GNC',
-        'GalNAc':'GNC',
-        'GlcN':'GCN',
-        'Neu5Ac':'NMC',
-        'Neu5Gc':'NMC',
-        'Fuc':'FUC',
-        'Rha':'FUC',
-        'Qui':'FUC',
+        'GlcA':'HXA',
+        'IdoA':'HXA',
+        'Glc':'HXS',
+        'Man':'HXS',
+        'Gal':'HXS',
+        'All':'HXS',
+        'Alt':'HXS',
+        'GlcNAc':'NHX',
+        'GalNAc':'NHX',
+        'GlcN':'HXN',
+        'Neu5Ac':'SIA',
+        'Neu5Gc':'SIA',
+        'Fuc':'DHX',
+        'Rha':'DHX',
+        'Qui':'DHX',
         'Xyl':'XYL',
-        'Gal3S':'GMY3S',
-        'GalNAc3S':'GNC3S',
-        'GlcA1S':'GCA1S',
-        'IdoA1S':'GCA1S',
-        'GlcNAc3S':'GNC3S',
-        'GlcNAc2S':'GNC2S',
-        'GalNAc2S':'GNC2S',
-        'GalNAc4S':'GNC4S',
-        'GlcNAc4S':'GNC4S'
+        'Gal3S':'HXS3S',
+        'GalNAc3S':'NHX3S',
+        'GlcA1S':'HXA1S',
+        'IdoA1S':'HXA1S',
+        'GlcNAc3S':'NHX3S',
+        'GlcNAc2S':'NHX2S',
+        'GalNAc2S':'NHX2S',
+        'GalNAc4S':'NHX4S',
+        'GlcNAc4S':'NHX4S'
         }
 
-# get the probabilities
-
-df=pd.read_csv('CFGArray.csv',header=None)
-glycans=list(df[1])
-
-glycanPairs=[]
-for glycan in glycans:
-    for k in re.findall(r'\(?\)?\w{4,}\(?\)?\-\)?\(?\w{4,}\(?\)?','%s'%(glycan)):
-        if 'Sp' in k or 'MurNAc' in k: # bacterial sugars will need to go in a separate script
-            next
-        else:
-            if k[0]=='(' or k[0]==')':
-                glycanPairs.append(k[1:])
-            else:
-                glycanPairs.append(k)
+# get the probabilities --> need to revise entirely
+f=open('probabilities.dat') # from glytoucan
+lines=f.readlines()
+f.close()
 
 pairDict={}
-for glycan in glycans:
-    for k in re.findall(r'\d(\w{4,})1-(\d)(\w{4,})\d?','%s'%(glycan)):
-        if k[2][-1] not in ['a','b','1','2','3','4','5','6',1,2,3,4,5,6]:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2])
-        elif k[2][-1] in ['a','b']:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-1])
-        else:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-2])
-        pairDict[pair]=0
-    for k in re.findall(r'(Neu\d\w{3,})2-(\d)(\w{4,})\d?','%s'%(glycan)):
-        if k[2][-1] not in ['a','b','1','2','3','4','5','6',1,2,3,4,5,6]:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2])
-        elif k[2][-1] in ['a','b']:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-1])
-        else:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-2])
-        pairDict[pair]=0
-
-
-for glycan in glycans:
-    for k in re.findall(r'\d(\w{4,})1-(\d)(\w{4,})\d?','%s'%(glycan)):
-        if k[2][-1] not in ['a','b','1','2','3','4','5','6',1,2,3,4,5,6]:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2])
-        elif k[2][-1] in ['a','b']:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-1])
-        else:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-2])
-        pairDict[pair]+=1
-    for k in re.findall(r'(Neu\d\w{3,})2-(\d)(\w{4,})\d?','%s'%(glycan)):
-        if k[2][-1] not in ['a','b','1','2','3','4','5','6',1,2,3,4,5,6]:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2])
-        elif k[2][-1] in ['a','b']:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-1])
-        else:
-            pair='%s-%s-%s'%(k[0][:-1],k[1],k[2][:-2])
-        pairDict[pair]+=1
-
-
+for l in lines:
+    cols=l.split()
+    pairDict[cols[0]]=float(cols[1])
 
 # get user input #
 
 parser=argparse.ArgumentParser()
-parser.add_argument('-t','--glycanType',default='N',help='Type of glycosylation (N-linked [N], mucin-type [O], glycosaminoglycan [GAG], monosaccharide [mono])')
-parser.add_argument('--cpx',action='store_true',default=False)
-parser.add_argument('--hmn',action='store_true',default=False)
-parser.add_argument('--mucin',action='store_true',default=False)
-parser.add_argument('--glycosaminoglycan',default=None)
+parser.add_argument('-t','--glycanType',default='N',help='Type of glycosylation (N-linked [N], mucin-type [O], glycosaminoglycan [GAG], monosaccharide [mono], domain-specific [D])')
+parser.add_argument('-nt','--nType',default='complex',help='Options are complex, hybrid, and oligomannose')
+parser.add_argument('--glycosaminoglycan',default=None,help='Options are ...')
 parser.add_argument('--mono',default=None)
+parser.add_argument('--domain',default=None) # need to include options (e.g. EGF, TSR, collagen), and corresponding bits of code, with residue search function
 parser.add_argument('-o','--outName',default='glycan')
 args=parser.parse_args()
 
+coreDict={ ### check all of these
+    'N-complex':'man3glcnac2man2',
+    'N-hybrid':'',
+    'N-oligomannose':'man3glcnac2man5',
+    'O':['core1','core2'] # can we do random.choice() with a bias so that cores 3-8 can be included but cores 1 and 2 still more likely?
+    #...
+}
 
-# set everything up #
+# N-glycosylation #
 
+if args.glycanType=='N':
+    
+    ### need to add in a bit to restrict the probabilityDict here to only allow suitable additions, and then can remove the later part that attempt to do this ###
 
-if args.glycanType=='N': # all the following only applies to N-linked glycosylation
-
-    core='man3glcnac2'
+    core=coreDict['%s-%s'%(args.glycanType,args.nType)] # check itp and pdb names match this
     coreLines=linesFromFile('%s.itp'%(core))
     itpList=[
             linesBetween(coreLines,'[ atoms ]','[ bonds ]'),
@@ -388,36 +353,18 @@ if args.glycanType=='N': # all the following only applies to N-linked glycosylat
             linesBetween(coreLines,'[ virtual_sitesn ]','')
             ]
 
-    hmn=args.hmn
-    cpx=args.cpx
-
-    prSet=pairDict.keys()
-    allProbabilities={}
-    for pair in prSet:
-        if hmn==False and pair.split('-')[0]=='Man': # if the residue to be added in mannose
-            print('was trying to add mannose, but not going to now')
-            next
-        elif cpx==False and pair.split('-')[0]!='Man':
-            next
-        else:
-            allProbabilities[pair]=int(pairDict[pair])/float(sum(list(pairDict.values())))
-
-    nonreducing,reducing=[],[]
-    for pair in prSet:
-        nonreducing.append(pair.split('-')[2])
-        reducing.append(pair.split('-')[0])
-    nrSet=list(set(nonreducing))
-    rSet=list(set(reducing))
-
-    nrProbabilities={}
-    for mono in nrSet:
-        nrProbabilities[mono]=nonreducing.count(mono)/float(len(nonreducing))
-
-    rProbabilities={}
-    for mono in rSet:
-        rProbabilities[mono]=reducing.count(mono)/float(len(reducing))
-
+    cpDict={} # create a new dictionary, suited to the glycan type, for conditional probabilities
+    # keys need to be the possible residues that may be encountered at the end of the arm
+    # values need to be dictionaries with conditional probabilities
+    # e.g. 'Man':{'GlcNAcb2':0.01,'Mana3':0.005}
+    #
+    # probabilityDict has the probability of pairs
+    # conditional probability is the probability of X given Y; probability of X and Y divided by probability of Y;
+    # probability of X and Y comes directly from the dictionary
+    # probability of Y needs to be obtained -- but, for now, just start with the simple probability of the pair
+    
     # get the branches ready
+    ### need to go over this based on the new variations available ###
 
     if args.glycanType=='N':
         branches=['Man-3-Man','Man-6-Man']
@@ -433,6 +380,8 @@ if args.glycanType=='N': # all the following only applies to N-linked glycosylat
     branch1=None # by default, we will have no further branching
     resnum1=4
 
+    ###
+    
     # do the iterations #
 
     for branch in branches: # loop through the main branches
@@ -460,27 +409,13 @@ if args.glycanType=='N': # all the following only applies to N-linked glycosylat
             break
         branch0=[branch.split('-')[0],resnum0,ID0,branchCoords] # list containing the above information, for convenience I suppose
 
-        # this will allow us to do hybrid glycosylation
-#        if branch==branches[1] and hmn==True:
-#            cpx=False
-
-        # this is a check to make sure we get no more mannose residues within a complex branch
-        if cpx==True:
-            tmp=[]
-            for r in rSet:
-                if r=='Man':
-                    next
-                else:
-                    tmp.append(r)
-            rSet=tmp
-
-        # get going with the glycosylation now, methinks
         counter=0 # use this to monitor how many rounds of glycosylation we have done
 
-        nrRes=branch.split('-')[2] # the nonreducing residue i.e. that already added
-        rRes=branch.split('-')[0] # the reducing residue i.e. that being added
-        bond1=branch.split('-')[1] # the bond to be created -- just a placeholder for now, so to speak
-        bond0=branch.split('-')[1] # the last bond added
+        nrRes=re.split('^5\d',branch)[1] # this is the residue one past in the branch
+        rRes=re.split('^5\d',branch)[0][:-1] # this is the residue at the end of the branch, which will soon become nrRes
+        bond0='%s%s'%(re.split('^5\d',branch)[0][-1],re.split('[A-z]',branch)[0]) # this is the bond between rRes and nrRes e.g. a3
+        
+        # need to check these all and below also, and probably update
         if branch==branches[0] and args.glycanType=='N':
             VS0=18 # for now
         elif branch!=branches[0] and args.glycanType=='N':
@@ -490,36 +425,38 @@ if args.glycanType=='N': # all the following only applies to N-linked glycosylat
 
         while counter<maxIterations: # keep extending the branch until we reach the maximum number of allowed iterations for that branch
 
-            for rRes in rSet: # for each possible next added residue
-
-                for b in [0,1,2,3,4,5,6,7,8,9]: # and each possible bond to the added residue
-
-                    pair='%s-%s-%s'%(rRes,b,nrRes) # what is the combination we end up with
-                    if pair in allProbabilities.keys(): # and is that a combination we know about?
-
-                        probability=float(allProbabilities[pair])/nrProbabilities[nrRes] # the probability of encountering that pair of residues linked by that bond
-
-                        if random.random()<probability: # now, if we generate a random number that is less than the probability, we will add rRes into the branch
-
-                            print('the shark kitten attacks') # this is a very helpful thing to be outputting...
-
-                            itpList,maxResnum,maxID,pdbLines,glycanCoords,VS0=theMaestro(itpList,pair,bond0,VS0,maxResnum,maxID,resnum0,pdbLines,glycanCoords) # call the maestro
-
+            nrRes=rRes # update the last residue added
+            for pair in pairDict.keys():
+                if re.split('\d',pair)[1]==nrRes: # get all pairs for which the nrRes matches that currently being considered
+                    p=pairDict[pair]
+                    if p>=random.random(): # if the probability of getting this pair is higher than a random number between 0 and 1
+                        rRes=re.split('\d',pair)[0][:-1]
+                        bond0='%s%s'%(re.split('\d',pair)[0][-1],re.split('^5[A-z]',pair)[0])
+            
+            #            probability=float(allProbabilities[pair])/nrProbabilities[nrRes] # the probability of encountering that pair of residues linked by that bond
+                        itpList,maxResnum,maxID,pdbLines,glycanCoords,VS0=theMaestro(itpList,pair,bond0,VS0,maxResnum,maxID,resnum0,pdbLines,glycanCoords) # call the maestro
+                            # can this be simplified?  may need to revise the function itself
                             counter+=1 # update the counter
-
-                            nrRes=rRes # now we update the nrRes, so that we can look for the next residue to be added
-                            bond0=bond1 # the new bond becomes the previous one
-                            resnum0=int(resnum0)+1 # and this
+                            resnum0=int(resnum0)+1 # can this be done as part of the funtion?
+                            
+                            # need to check that capping groups work as such otherwise do e.g.
+                            if 'a' in bond0:
+                                break
                         
         resnum1+=counter
-        maxIterations=3
+        maxIterations=3###?
 
-    if cpx==True and random.random()<0.5: # do this out of the loop, as only want it to happen once
+    if args.nType=='complex' and random.random()<0.5: # need to update and also build in some more suitable probabilty, and do a biology check
+        for pair in pairDict.keys():
+            if re.split('\d',pair)[0][:-1]=='Fuc' and re.split('\d',pair)[1]==rRes:
+                p=pairDict[pair]
+                if p>=random.random():
+                    itpList,maxResnum,maxID,pdbLines,glycanCoords,VSn=theMaestro(itpList,pair,bond0,5,maxResnum,maxID,1,pdbLines,glycanCoords) # check this works
 
-        itpList,maxResnum,maxID,pdbLines,glycanCoords,VSn=theMaestro(itpList,'Fuc-3-%s'%(nrRes),bond0,5,maxResnum,maxID,1,pdbLines,glycanCoords)
+# mucin-type #
 
 elif args.glycanType=='O':
-    core=random.choice(['core1','core2','core3','core4','core5','core6','core7','core8'])
+    core=random.choice(coreDict[args.glycanType])
   
     coreLines=linesFromFile('%s.itp'%(core))
     itpList=[
@@ -539,28 +476,40 @@ elif args.glycanType=='O':
 
     resnum1=maxResnum
 
-    if args.glycanType in ['O1','O8']:
-        branches=['Gal-3-GalNAc']
-    elif args.glycanType in ['O2','O4']:
-        branches=['Gal-3-GalNAc','GlcNAc-6-GalNAc']
-    elif args.glycanType in ['O3','O5']:
-        branches=['GlcNAc-3-GalNAc']
-    elif args.glycanType in ['O6','O7']:
-        branches=['GlcNAc-6-GalNAc']
+    if core=='O1':
+        branches=['Galb3GalNAc']
+    elif core=='O2':
+        branches=['Galb3GalNAc','GlcNAcb6GalNAc']
+    elif core=='O3':
+        branches=['GlcNAcb3GalNAc']
+    elif core=='O4':
+        branches=['GlcNAcb3GalNAc','GlcNAcb6GalNAc']
+    elif core=='O5':
+        branches=['GalNAca3GalNAc']
+    elif core=='O6':
+        branches=['GalNAcb6GalNAc']
+    elif core=='O7':
+        branches=['GalNAca6GalNAc']
+    elif core=='O8':
+        branches=['Gala3GalNAc']
 
     for branch in branches:
+        
+        counter=0 # use this to monitor how many rounds of glycosylation we have done
 
-        counter=0
-
-        if branch in ['Gal-3-GalNAc','GlcNAc-3-GalNAc']:
+        nrRes=re.split('^5\d',branch)[1]
+        rRes=re.split('^5\d',branch)[0][:-1]
+        bond0='%s%s'%(re.split('^5\d',branch)[0][-1],re.split('[A-z]',branch)[0])
+        
+        if branch in ['Galb3GalNAc','GlcNAcb3GalNAc']:
             branchCoords=glycanCoords[1][-1] # coordinates of the VS of the final residue in the branch
-        elif branch in ['GlcNAc-6-GalNAc','GlcNAc-6-GlcNAc','GlcNAc-3-GalNAc']:
+        elif branch in ['GlcNAcb6GalNAc','GlcNAcb6GlcNAc','GlcNAca3GalNAc']: ###? this definitely needs looking at
             branchCoords=glycanCoords[2][-1]
         else:
             branchCoords=glycanCoords[1][-1] # coordinates of the VS of the final residue in the branch
 
-        # at least at the moment, we shall limit the potential residues that can be added for O-linked
-        addingOptions={
+        # change to a new probability dict that accounts for the biological limitations on possible added residues
+        addingOptions={ ### need to update this based on biology
             0:['Gal','Neu5Ac'],
             1:['GlcNAc','GalNAc','Neu5Ac'],
             2:['Neu5Ac']
@@ -571,43 +520,51 @@ elif args.glycanType=='O':
 
         branch0=[branch.split('-')[0],resnum0,ID0,branchCoords] # list containing the above information, for convenience I suppose
 
-        nrRes=branch.split('-')[2] # the nonreducing residue i.e. that already added
-        rRes=branch.split('-')[0] # the reducing residue i.e. that being added
-        bond1=branch.split('-')[1] # the bond to be created -- just a placeholder for now, so to speak
-        bond0=branch.split('-')[1] # the last bond added
+        
         if branch==branches[0]:
             VS0=6 # for now
         elif branch!=branches[0]:
             VS0=maxID # for now
 
         while counter<3:
-            # extend the core
-            # somehow
-            # maybe
-            # i don't know -_-
 
-            rRes=random.choice(addingOptions[counter])
+            nrRes=rRes # do this at the start
+            bond1=bond0
+            
+            rRes=random.choice(addingOptions[counter]) # check this and all of the below
             itpList,maxResnum,maxID,pdbLines,glycanCoords,VS0=theMaestro(itpList,pair,bond0,VS0,maxResnum,maxID,resnum0,pdbLines,glycanCoords) # call the maestro
-            bond1=3 ### not always, but will do for the moment#######################################################################################################!!!!!!!!! NEED TO CHANGE
-            counter+=1 # don't forget to do this or you shall be stuck in an infinite loop
-            nrRes=rRes # now we update the nrRes, so that we can look for the next residue to be added
-            bond0=bond1 # the new bond becomes the previous one
-            resnum0=int(resnum0)+1 # and this
-            if rRes=='Neu5Ac': # we do not extend beyond sialic acid
-                print('just added sialic acid and therefore I exit (hopefully not pursued by a bear)')
-                break
+            bond1=3 ###?
+            counter+=1
+            resnum0=int(resnum0)+1
+            # again, capping residues should automatically lead to exit, and we must check that this is the case
                         
         resnum1+=counter
-        maxIterations=2
+        maxIterations=2 ###?
 
 
-##### glycosaminoglycans #### the pair is the issue -- needs to be e.g. Gal-3-GalNAc
+# glycosaminoglycans #
+
 elif args.glycanType=='GAG':
-   
-    if args.glycosaminoglycan in ['HA','hyaluronan','hyaluronic acid','ha']:
-        core='4-GlcA-3-GlcNAc'
+
+    if args.glycosaminoglycan in ['heparan sulphate','heparin','hs']:
+        gag='hs'
+    elif args.glycosaminoglycan in ['keratan sulphate','ks']:
+        gag='ks'
+    elif args.glycosaminoglycan in ['chondroitin sulphate','cs']:
+        gag='cs'
+    elif args.glycosaminoglycan in ['dermatan sulphate','ds']:
+        gag='ds'
+    elif args.glycosaminoglycan in ['hyaluronan','hyaluronic acid','ha']:
+        gag='ha'
     else:
-        core='3-Gal-3-Gal-4-Xyl'
+        raise Exception('glycosaminoglycan not recognised')
+        
+    core=coreDict[gag]
+    ### update/change
+    if gag=='ha':
+        core='4-GlcA-3-GlcNAc'###
+    else:
+        core='3-Gal-3-Gal-4-Xyl'###
 
     coreLines=linesFromFile('%s.itp'%(core))
     itpList=[
@@ -631,20 +588,8 @@ elif args.glycanType=='GAG':
 
     branchCoords=glycanCoords[max(glycanCoords.keys())][-1] # coordinates of the VS of the final residue in the branch
 
-    if args.glycosaminoglycan in ['heparan sulphate','heparin','hs']:
-        gag='hs'
-    elif args.glycosaminoglycan in ['keratan sulphate','ks']:
-        gag='ks'
-    elif args.glycosaminoglycan in ['chondroitin sulphate','cs']:
-        gag='cs'
-    elif args.glycosaminoglycan in ['dermatan sulphate','ds']:
-        gag='ds'
-    elif args.glycosaminoglycan in ['hyaluronan','hyaluronic acid','ha']:
-        gag='ha'
-    else:
-        raise Exception('glycosaminoglycan not recognised')
 
-    addingOptions={
+    addingOptions={ # incorporate into the probability dictionary instead
             'ha':{0:['GlcA1S','GlcA'],
                 1:['GlcNAc2S','GlcNAc3S','GlcNAc4S','GlcNAc'],
                 'bonds':[3,4] #########################
@@ -666,17 +611,17 @@ elif args.glycanType=='GAG':
                 'bonds':[4,4]
                 }
         }
-        ############################### need to check the bond order -- look at alternative outcomes and compare with atomistic models
+        
     ID0=maxID
     resnum0=resnum1
 
     branch=core
     branch0=[branch.split('-')[1],resnum0,ID0,branchCoords] # list containing the above information, for convenience I suppose
 
-    nrRes=branch.split('-')[3] # the nonreducing residue i.e. that already added
-    rRes=branch.split('-')[1] # the reducing residue i.e. that being added
-    bond1=branch.split('-')[0] # the bond to be created -- just a placeholder for now, so to speak
-    bond0=branch.split('-')[0] # the last bond added
+    nrRes=re.split('^5\d',branch)[1]
+    rRes=re.split('^5\d',branch)[0][:-1]
+    bond0='%s%s'%(re.split('^5\d',branch)[0][-1],re.split('[A-z]',branch)[0])
+    
     VS0=maxID
 
     gagLength=random.choice(range(60,100))
