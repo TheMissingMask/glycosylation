@@ -225,13 +225,9 @@ def theMaestro(itpList,pair,bond0,VS0,maxResnum,maxID,resnum0,pdbLines,glycanCoo
 
     print('I lost my shoe')
 
-    ### 29.06.20 changes to account for the new library of glycans
     rRes=re.split('\d',pair)[0][:-1] # this should get the residue to be added, and remove the 'a' or 'b' from the end
     bond1='%s%s'%(re.split('\d',pair)[0][-1],re.split('[A-z]',pair)[0]) # this should get the 'a'/'b' and the bond number
     nrRes=re.split('\d',pair)[1] # this should get the residue already present in the chain, with no numbers or anomeric identifiers
-    #rRes=pair.split('-')[0]
-    #bond1=pair.split('-')[1]
-    #nrRes=pair.split('-')[2]
 
     # itp stuff
     itpLines=linesFromFile('%s.itp'%(rRes)) # get the topology information for the residue being added, which is named the same as in the library
@@ -514,6 +510,7 @@ elif args.glycanType=='O':
             1:['GlcNAc','GalNAc','Neu5Ac'],
             2:['Neu5Ac']
             }
+        #b3GlcNAc -- cores 1 and 2 from Gal
 
         ID0=glycanLines[resnum1][-1].split()[1] # atom ID of the VS of the final residue in the branch
         resnum0=resnum1
@@ -560,11 +557,22 @@ elif args.glycanType=='GAG':
         raise Exception('glycosaminoglycan not recognised')
         
     core=coreDict[gag]
-    ### update/change
+    ### figure out how to make this work, and incorporate sulphation
     if gag=='ha':
-        core='4-GlcA-3-GlcNAc'###
-    else:
-        core='3-Gal-3-Gal-4-Xyl'###
+        core='b4GlcAb3GlcNAc'
+        pair='[b4GlcAb3GlcNAc']
+    elif gag=='cs':
+        core='b4GlcAb3Galb3Galb4Xyl'
+        pairs=['b4GlcAb3GalNAc']
+    elif gag=='hs':
+        core='a4GlcAb3Galb3Galb4Xyl'
+        pairs=['a4GlcNAca4IdoA','b4GlcNAca4GlcAb4']
+    elif gag=='ks':
+        core='b4GlcAb3Galb3Galb4Xyl'
+        pairs=['b4GlcNAcb3Gal']
+    elif gag=='ds':
+        core='a3GlcAb3Galb3Galb4Xyl'
+        pairs=['b3GalNAcb4GlcA','a3GalNAcb4IdoA']
 
     coreLines=linesFromFile('%s.itp'%(core))
     itpList=[
@@ -616,7 +624,7 @@ elif args.glycanType=='GAG':
     resnum0=resnum1
 
     branch=core
-    branch0=[branch.split('-')[1],resnum0,ID0,branchCoords] # list containing the above information, for convenience I suppose
+    branch0=[branch.split('-')[1],resnum0,ID0,branchCoords] # really only have one branch for these
 
     nrRes=re.split('^5\d',branch)[1]
     rRes=re.split('^5\d',branch)[0][:-1]
@@ -638,12 +646,6 @@ elif args.glycanType=='GAG':
         nrRes=rRes # now we update the nrRes, so that we can look for the next residue to be added
         bond0=bond1 # the new bond becomes the previous one
         resnum0=int(resnum0)+1 # and this
-
-#        f=open('%s.pdb'%(counter),'w')
-#        for k in pdbLines.keys():
-#            for l in pdbLines[k]:
-#                f.write(l)
-#        f.close()
 
         if alt==0:
             alt=1
