@@ -15,13 +15,8 @@ def tidyPair(pair):
     pair=re.sub(r'-','',pair)
     pair=re.sub(r"'",'',pair)
     pair=re.sub(r'\\n','',pair)
-    pair=re.sub(r'\?','',pair)
-#    if len(pair)==0:
-#        return pair
-#    elif re.split('\d',pair)[1]!='Rha' and pair[-1] in ['a','b']:# and re.split('\d',pair)[1]!='Rha' and len(pair)>1:
-#        pair=pair[:-1]
-#    elif re.split('\d',pair)[1]=='Rhaa':
-#        pair=pair[:-1]
+    if pair[0] in ['a','b']:
+        pair=pair[1:]
     return pair
 
 seqList=[]
@@ -54,8 +49,17 @@ for glycan in glycanList:
     branches.append(re.sub('\(.*?\)','',glycan))
 
     for branch in branches:
-        residues=re.split(r'[^5\d\?]',branch)
-        bonds=re.findall(r'[^5\d\?]',branch)
+        print(branch)
+        branch=re.sub("\?-.n'",'',branch)
+        branch=re.sub(":",'',branch)
+        branch=re.sub("\?-\n'",'',branch)
+        branch=re.sub("[a|b]-.n'",'',branch)
+        branch=re.sub("[a|b]-\n'",'',branch)
+        branch=re.sub("b'",'',branch)
+        residues=re.split(r'[a|b|\?*][\d|-|\?]',branch)
+        residues=[i for i in residues if i]
+        bonds=re.findall(r'[a|b|\?*][\d|-|\?]',branch)
+        bonds=[i for i in bonds if i]
         if residues[-1]==')':
             residues=residues[:-1]
         elif residues[0]=='(':
@@ -64,24 +68,21 @@ for glycan in glycanList:
             residues=residues[1:]
         elif residues[0]==']':
             residues=residues[1:]
-        if len(residues)==1:
+        if len(residues)<=2:
             next
-#        for i in range(len(residues)):
-#            if residues[i]=='Neu':
-#                residues[i]='Neu5Ac'
         else:
             for i in range(len(residues)-1):
-                pair='%s%s%s'%(residues[i],bonds[i],residues[i+1][:-1])
-                if len(pair.split(')'))>1 or len(pair.split('('))>1:
-                    next
-                elif 'groDman' in pair:
-                    next
-                elif pair[-1] in ['-','a','b',"'",'\(','\)']:
-                    pair=pair[:-1]
-                elif pair[0] in ["'",'\(','\)','a','b','-']:
-                    pair=pair[1:]
+                pair='%s%s%s'%(residues[i],bonds[i],residues[i+1])
+                #if len(pair.split(')'))>1 or len(pair.split('('))>1:
+                #    next
+                #elif len(pair.split('?'))>1:
+                #    next
                 pair=tidyPair(pair)
-                if len(pair)==0:
+                if pair[-2:]=='Ar':
+                    pair=pair+'a'
+                elif pair[-2:]=='Rh':
+                    pair=pair+'a'
+                if len([ele for ele in ['Fru','fru','Api','api','Pen','pen','P','Hep','hep','Tyv','tyv','gro','Gro','PEtn','rib','Hex','hex','Rib','tri','Tri','thr','ery','Thr','Ery'] if (ele in pair)])>=1:
                     next
                 elif pair not in pairDict.keys():
                     pairDict[pair]=1
@@ -106,7 +107,7 @@ sns.set_palette('dark')
 
 data1=[]
 for k in probabilityDict.keys():
-    if probabilityDict[k]>=0.01:
+    if probabilityDict[k]>=0.01 or probabilityDict[k]<=0.0001:
         next
     else:
         data1.append([k,probabilityDict[k]])
