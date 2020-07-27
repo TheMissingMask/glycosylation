@@ -13,7 +13,8 @@ def checkN(pair):
 capList=['Neu','a2','a3','a6','a4','Fuc']
 addList=['Gal','GalNAc','GlcNAc','Fuc','Neu']
 
-f=open('probabilities.dat')
+#f=open('probabilities.dat')
+f=open('conP.dat')
 lines=f.readlines()
 f.close()
 
@@ -41,7 +42,8 @@ for branch in branches:
 
     counter=0
     broken=False
-    while counter<5:
+    while counter<=3:
+        nrRes=rRes
         for pair in pairDict.keys():
             if checkN(pair)==False:
                 next
@@ -57,15 +59,17 @@ for branch in branches:
                     else:
                         tmp=('%s%s'%(rRes,bond0))+tmp
                         counter+=1
-                        nrRes=rRes
                         if rRes in capList or bond0 in capList:
+                            broken=True
+                            break
+                        elif counter>=3:
                             broken=True
                             break
         if broken:
             break
     newGlycans.append(tmp)
 
-cpx=False
+cpx=True
 hybrid=False
 man=False
 
@@ -93,4 +97,3 @@ a=glycan
 numbers=re.compile(r'([a|b]\d)')
 a=numbers.sub(r'(\1)',a)
 print(a)
-
