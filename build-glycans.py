@@ -248,30 +248,78 @@ def theMaestro(itpList,pair,bond0,VS0,maxResnum,maxID,resnum0,pdbLines,glycanCoo
 # set up the data dictionaries
 
 bondDict={
-        'GMY-GMY':(0.57,20),
-        'GMY-GNC':(0.52,20),
-        'GNC-GMY':(0.52,20),
-        'GNC-GNC':(0.59,20),
-        'GNC-GCA':(0.54,20),
-        'GCA-GNC':(0.54,20),
-        'GMY-GCA':(0.54,20),
-        'GCA-GMY':(0.54,20),
-        'GMY-NMC':(0.50,20),
-        'NMC-GMY':(0.50,20),
-        'GMY-FUC':(0.56,20),
-        'FUC-GMY':(0.56,20),
-        'NMC-NMC':(0.64,20),
-        'GNC-FUC':(0.53,20),
-        'FUC-GNC':(0.53,20),
-        None:(0.55,20)
+        'DHX-a2-DHX':0.47,
+        'DHX-a3-DHX':0.51,
+        'HXN-a4-HXA':0.47,
+        'HXS-a1-HXS':0.49,
+        'HXS-a2-HXS':0.52,
+        'HXS-a3-HXS':0.52,
+        'HXS-a4-HXS':0.49,
+        'HXS-a6-HXS':0.58,
+        'HXS-b1-HXS':0.56,
+        'HXS-b2-HXS':0.55,
+        'HXS-b3-HXS':0.56,
+        'HXS-b4-HXS':0.54,
+        'HXS-b6-HXS':0.64,
+        'NHX-a3-HXS':0.52,
+        'NHX-b1-HXS':0.58,
+        'NHX-b2-HXS':0.57,
+        'NHX-b3-HXS':0.56,
+        'NHX-b6-HXS':0.65,
+        'SIA-a3-NHX':0.51,
+        'SIA-a4-NHX':0.46,
+        'SIA-a6-NHX':0.57,
+        'SIA-b6-NHX':0.52,
+        'NHX-b4-SIA':0.53,
+        'HXA-a3-NHX':0.51,
+        'HXA-a4-HXN':0.50,
+        'HXA-b4-HXN':0.54,
+        'HXS-a3-DHX':0.51,
+        'HXS-b4-DHX':0.49,
+        'HXS-a1-NHX':0.51,
+        'HXS-a3-NHX':0.53,
+        'HXS-b3-NHX':0.55,
+        'HXS-b6-NHX':0.62,
+        'HXA-a1-HXS':0.51,
+        'NHX-a3-NHX':0.53,
+        'NHX-a4-NHX':0.49,
+        'NHX-b3-NHX':0.56,
+        'NHX-b4-NHX':0.53,
+        'XYL-b4-XYL':0.57,
+        'HXS-b4-XYL':0.51,
+        'DHX-a3-NHX':0.53,
+        'DHX-b3-NHX':0.57,
+        'DHX-a6-HXS':0.63,
+        'SIA-b6-HXS':0.51,
+        'HXN-a4-HXN':0.50,
+        'HXN-b4-HXN':0.53,
+        'HXN-b6-HXN':0.63,
+        'NHX-b3-DHX':0.56,
+        'SIA-a8-SIA':0.65,
+        'XXX-a1-XXX':0.50,
+        'XXX-a2-XXX':0.50,
+        'XXX-a3-XXX':0.52,
+        'XXX-a4-XXX':0.49,
+        'XXX-a6-XXX':0.59,
+        'XXX-b1-XXX':0.57,
+        'XXX-b2-XXX':0.56,
+        'XXX-b3-XXX':0.56,
+        'XXX-b4-XXX':0.53,
+        'XXX-b6-XXX':0.60
         }
 
 angleDict={
-        '2':[(13,10),(82,10),(147,10),(58,10),(155,10),(74,10)],
-        '3':[(89,10),(25,10),(140,10),(56,10),(142,10),(78,10)],
-        '4':[(139,10),(46,10),(96,10),(46,10),(140,10),(81,10)],
-        '6':[(127,10),(126,10),(21,10),(47,10),(131,10),(82,10)],
-        '8':[(90,10),(148,10),(44,10),(51,10),(23,10),(43,10)]
+        'a3':[(85,60),(31,60),(145,50),(61,60),(134,50),(78,50)],
+        'a4':[(142,40),(46,60),(82,50),(61,60),(124,50),(85,50)],
+        'b3':[(102,30),(24,30),(129,30),(52,60),(145,60),(77,50)],
+        'a6':[(128,10),(119,1),(16,30),(64,10),(122,20),(85,30)],
+        'b6':[(131,1),(113,1),(15,20),(53,20),(132,30),(87,20)],
+        'a2':[(45,40),(93,50),(130,20),(71,40),(125,40),(78,30)],
+        'b4':[(125,50),(52,30),(88,40),(53,60),(139,60),(82,50)],
+        'b2':[(38,20),(85,30),(144,30),(43,50),(138,50),(82,50)],
+        'b1':[(47,50),(150,30),(86,30),(47,50),(139,40),(83,40)],
+        'a1':[(36,60),(130,50),(99,50),(49,70),(121,50),(97,50)],
+        'a8':[(76,1),(124,1),(48,1),(72,1),(102,1),(107,1)]
         }
 
 mapDict={
@@ -307,6 +355,9 @@ f=open('probabilities.dat') # from glytoucan
 lines=f.readlines()
 f.close()
 
+
+# probabilities.dat in form GlcAa2Gal   8.825346394845998e-05 (each row a new disaccharide pair)
+
 pairDict={}
 for l in lines:
     cols=l.split()
@@ -334,6 +385,97 @@ coreDict={ ### check all of these
 # N-glycosylation #
 
 if args.glycanType=='N':
+    
+    ######the below is directly from test-N.py######
+    def checkN(pair):
+        rRes=re.split('[\?|a|b][\d|\?]',pair)[0]
+        if rRes not in ['Man','Gal','GlcNAc','GalNAc','Fuc','Neu']:
+            return False
+        else:
+            return True
+
+    capList=['Neu','a2','a3','a6','a4','Fuc']
+    addList=['Gal','GalNAc','GlcNAc','Fuc','Neu']
+
+    f=open('conP.dat')
+    lines=f.readlines()
+    f.close()
+
+    pairDict={}
+    for l in lines:
+        cols=l.split()
+        pairDict[cols[0]]=float(cols[1])
+
+    core='GlcNAcb2Mana6(GlcNAcb2Mana3)Manb4GlcNAcb4GlcNAc'
+    base=core.split(')')[1]
+
+    newGlycans=[]
+
+    branches=re.findall('\(.*?\)',core)
+    branches.append(re.sub('\(.*?\)','',core))
+
+    for branch in branches:
+
+        branch=re.sub('[\)|\(]','',branch)
+        tmp=branch
+        nrRes=re.split('[a|b]\d',branch)[1]
+        rRes=re.split('[a|b]\d',branch)[0]
+        bond0=re.findall('[a|b]\d',branch)[0]
+
+        counter=0
+        broken=False
+        while counter<=3:
+            nrRes=rRes
+            for pair in pairDict.keys():
+                if checkN(pair)==False:
+                    next
+                if re.split('[\?|a|b][\d|\?]',pair)[1]==nrRes:
+                    p=pairDict[pair]
+                    if p>=random.random():
+                        rRes=re.split('[\?|a|b][\d|\?]',pair)[0]
+                        bond0=re.findall('[\?|a|b][\d|\?]',pair)[0]
+                        if '?' in bond0:
+                            next
+                        elif rRes not in addList:
+                            next
+                        else:
+                            tmp=('%s%s'%(rRes,bond0))+tmp
+                            counter+=1
+                            if rRes in capList or bond0 in capList:
+                                broken=True
+                                break
+                            elif counter>=3:
+                                broken=True
+                                break
+            if broken:
+                break
+        newGlycans.append(tmp)
+
+    if cpx:
+        glycan=re.sub(base,'',tmp)+'['+newGlycans[0]+']'+base
+    elif hybrid:
+        glycan='Mana6[Mana3]Mana6[%s]'%(newGlycans[0])+base
+    elif man:
+        glycan=random.choice([
+            'Mana6[Mana3]Mana6[Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana2Mana6[Mana3]Mana6[Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana6[Mana2Mana3]Mana6[Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana6[Mana3]Mana6[Mana2Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana2Mana6[Mana2Mana3]Mana6[Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana2Mana6[Mana3]Mana6[Mana2Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana6[Mana2Mana3]Mana6[Mana2Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana2Mana6[Mana2Mana3]Mana6[Mana2Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana2Mana6[Mana2Mana3]Mana6[Mana2Mana2Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana6[Mana2Mana3]Mana6[Mana2Mana2Mana3]Manb4GlcNAcb4GlcNAc',
+            'Mana2Mana6[Mana3]Mana6[Mana2Mana2Mana3]Manb4GlcNAcb4GlcNAc'
+            ])
+
+    glycan=re.sub('Neu','Neu5Ac',glycan)
+    a=glycan
+    numbers=re.compile(r'([a|b]\d)')
+    a=numbers.sub(r'(\1)',a)
+    print(a)
+    ####test-N.py ends here####
     
     ### need to add in a bit to restrict the probabilityDict here to only allow suitable additions, and then can remove the later part that attempt to do this ###
 
