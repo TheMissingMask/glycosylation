@@ -479,8 +479,228 @@ if args.glycanType=='N':
     
     #how do we use this string to build the glycan?
     #test case example is:   Galb4GlcNAcb2Mana6(Galb4GlcNAcb2Mana3)Manb4GlcNAcb4GlcNAc
+    preBranch=glycanToAdd.split(')')[-1]
+    branches=[
+        glycanToAdd.split('(')[0],
+        glycanToAdd.split(')')[0].split('(')[1]
+              ]
+    preBranchResidues=re.split('[a|b]\d',preBranch)
+    preBranchBonds=re.findall('[a|b]\d',preBranch)
+    itpDict={
+     'atoms':[], # list of strings to print directly out into the file
+     'bonds':[],
+     'constraints':[],
+     'angles':[],
+     'dihedrals':[],
+     'virtual_sitesn':[]
+    }
     
-    
+    atomN=0
+    resN=0
+    newatoms=0
+    beadNumbers={}
+    for i in range(len(preBranchResidues)):
+        beadNumbers[i]=[]
+    i=0
+    for res in preBranchResidues:
+        cgRes=mapDict[res]
+        resLines=linesFromFile('%s.itp'%(cgRes))
+        # atoms
+        for l in linesBetween(resLines,'[ atoms ]','\n\n'):
+            cols=l.split()
+            newLine=' %s  %s  %s  %s  %s  %s  %s\n'%(int(cols[0])+atomN,cols[1],int(cols[2])+resN,cols[3],cols[4],int(cols[5])+atomN,cols[6])
+            itpDict['atoms'].append(newLine)
+            beadNumbers[i].append(int(cols[0])+nAtoms) # so now we have a list of all the atom ids of that residue
+        newatoms=int(cols[0])
+        # constraints
+        for l in linesBetween(resLines,'[ constraints ]','\n\n'):
+            cols=l.split()
+            newLine=' %s  %s  %s  %s\n'%(int(cols[0])+atomN,int(cols[1])+atomN,cols[2],cols[3])
+            itpDict['constraints'].append(newLine)
+        # angles
+        for l in linesBetween(resLines,'[ angles ]','\n\n'):
+            cols=l.split()
+            newLine=' %s  %s  %s  %s  %s  %s\n'%(int(cols[0])+atomN,int(cols[1])+atomN,int(cols[2])+atomN,cols[3],cols[4],cols[5])
+            itpDict['angles'].append(newLine)
+        # virtual sites
+        for l in linesBetween(resLines,'[ virtual_sitesn ]','\n\n'):
+            cols=l.split()
+            newLine=' %s  %s  %s  %s  %s\n'%(int(cols[0])+atomN,cols[1],int(cols[2])+atomN,int(cols[3])+atomN,int(cols[4])+atomN)
+            itpDict['virtual_sitesn'].append(newLine)
+        atomN+=newatoms
+        resN+=1
+        # now we need to add the bonds between the residues
+        for i in range(len(preBranchBonds)):
+            bondVS=(beadNumbers[i][-1],beadNumbers[i+1][-1])
+            bondType='%s-%s-%s'%(mapDict[preBranchResidues[i]],preBranchBonds[i],mapDict[preBranchResidues[i+1]])
+            if bondType not in bondDict.keys():
+                bondLength=bondDict['XXX-%s-XXX'%(preBranchBonds[i])]
+            else:
+                bondLength=bondDict[bondType]
+            newLine=' %s  %s  %s  %s  %s\n'%(bondVS[0],bondVS[1],2,bondLength,1250)
+            itpDict['bonds'].append(newLine)
+        # now we need to add the angle
+        for i in range(len(preBranchBonds)):
+            bondVS=(beadNumbers[i][-1],beadNumbers[i+1][-1])
+            bondBeads=[beadNumbers[i][0],beadNumbers[i][1],beadNumbers[i][2],beadNumbers[i+1][0],beadNumbers[i+1][1],beadNumbers[i+1][2]]
+            bondType='%s'%(preBranchBonds[i])
+            angles=angleDict[bondType]
+            newLines=[]
+            for j in range(3):
+                newLines.append(' %s  %s  %s  %s  %s  %s\n'%(bondBeads[j],bondVS[0],bondVS[1],2,angles[j][0],angles[j][1]))
+            for j in range(3,6):
+                newLines.append(' %s  %s  %s  %s  %s  %s\n'%(bondVS[0],bondVS[1],bondBeads[j],2,angles[j][0],angles[j][1]))
+            for l in newLines:
+                itpDict['angles'].append(l)
+    coreEndAtom=atomN # this will be linked to each branch
+    coreEndRes=cgRes
+    # now we need to repeat that whole process for each of the branches, and then add the bonds from the branches to the core
+    ###################################### branches
+    for branch in branches:
+        bondToCore=branch[-1]
+        branch=branch[:-1]
+        branchResidues=re.split('[a|b]\d',branch)
+        branchBonds=re.findall('[a|b]\d',branch)
+        newatoms=0
+        beadNumbers={}
+        for i in range(len(branchResidues)):
+            beadNumbers[i]=[]
+        i=0
+        for res in branchResidues:
+            cgRes=mapDict[res]
+            resLines=linesFromFile('%s.itp'%(cgRes))
+            # atoms
+            for l in linesBetween(resLines,'[ atoms ]','\n\n'):
+                cols=l.split()
+                newLine=' %s  %s  %s  %s  %s  %s  %s\n'%(int(cols[0])+atomN,cols[1],int(cols[2])+resN,cols[3],cols[4],int(cols[5])+atomN,cols[6])
+                itpDict['atoms'].append(newLine)
+                beadNumbers[i].append(int(cols[0])+nAtoms) # so now we have a list of all the atom ids of that residue
+            newatoms=int(cols[0])
+            # constraints
+            for l in linesBetween(resLines,'[ constraints ]','\n\n'):
+                cols=l.split()
+                newLine=' %s  %s  %s  %s\n'%(int(cols[0])+atomN,int(cols[1])+atomN,cols[2],cols[3])
+                itpDict['constraints'].append(newLine)
+            # angles
+            for l in linesBetween(resLines,'[ angles ]','\n\n'):
+                cols=l.split()
+                newLine=' %s  %s  %s  %s  %s  %s\n'%(int(cols[0])+atomN,int(cols[1])+atomN,int(cols[2])+atomN,cols[3],cols[4],cols[5])
+                itpDict['angles'].append(newLine)
+            # virtual sites
+            for l in linesBetween(resLines,'[ virtual_sitesn ]','\n\n'):
+                cols=l.split()
+                newLine=' %s  %s  %s  %s  %s\n'%(int(cols[0])+atomN,cols[1],int(cols[2])+atomN,int(cols[3])+atomN,int(cols[4])+atomN)
+                itpDict['virtual_sitesn'].append(newLine)
+            atomN+=newatoms
+            resN+=1
+            # now we need to add the bonds between the residues
+            for i in range(len(branchBonds)):
+                bondVS=(beadNumbers[i][-1],beadNumbers[i+1][-1])
+                bondType='%s-%s-%s'%(mapDict[branchResidues[i]],branchBonds[i],mapDict[branchResidues[i+1]])
+                if bondType not in bondDict.keys():
+                    bondLength=bondDict['XXX-%s-XXX'%(branchBonds[i])]
+                else:
+                    bondLength=bondDict[bondType]
+                newLine=' %s  %s  %s  %s  %s\n'%(bondVS[0],bondVS[1],2,bondLength,1250)
+                itpDict['bonds'].append(newLine)
+            # now we need to add the angle
+            for i in range(len(branchBonds)):
+                bondVS=(beadNumbers[i][-1],beadNumbers[i+1][-1])
+                bondBeads=[beadNumbers[i][0],beadNumbers[i][1],beadNumbers[i][2],beadNumbers[i+1][0],beadNumbers[i+1][1],beadNumbers[i+1][2]]
+                bondType='%s'%(branchBonds[i])
+                angles=angleDict[bondType]
+                newLines=[]
+                for j in range(3):
+                    newLines.append(' %s  %s  %s  %s  %s  %s\n'%(bondBeads[j],bondVS[0],bondVS[1],2,angles[j][0],angles[j][1]))
+                for j in range(3,6):
+                    newLines.append(' %s  %s  %s  %s  %s  %s\n'%(bondVS[0],bondVS[1],bondBeads[j],2,angles[j][0],angles[j][1]))
+                for l in newLines:
+                    itpDict['angles'].append(l)
+            branchEndAtom=atomN # this will be linked to each branch
+            branchEndRes=cgRes
+            bondType='%s-%s-%s'%(branchEndRes,bondToCore,coreEndRes) # correct way round?
+            if bondType not in bondDict.keys():
+                    bondLength=bondDict['XXX-%s-XXX'%(branchBonds[i])]
+                else:
+                    bondLength=bondDict[bondType]
+            newLine=' %s  %s  %s  %s  %s\n'%(branchEndAtom,coreEndAtom,2,bondLength,1250)
+            ###
+            ### need to do the angles
+#            newLines=[]
+#            angles=angleDict[bondType.split('-')[1]]
+#            for j in range(3):
+#                newLines.append(' %s  %s  %s  %s  %s  %s\n'%(beadNumbers[0][j],branchEndAtom,coreEndAtom,2,angles[j][0],angles[j][1]))
+#            for j in range(3,6):
+#                newLines.append(' %s  %s  %s  %s  %s  %s\n'%(branchEndAtom,coreEndAtom,coreEndNumbers[j],2,angles[j][0],angles[j][1]))
+
+    # coordinates are to be: (0,0),(0,5),(0,10),(-5,15),(-5,20),(5,15),(5,20) ## need to be able to get this from the core and branch lengths
+    coords=[]
+    for i in range(len(coreRes)):
+        coords.append((0,i*5,0))
+    for j in range(len(branch0Res)):
+        coords.append((-5,(i*5)+((j+1)*5),0))
+    for j in range(len(branch1Res)):
+        coords.append((5,(i*5)+((j+1)*5),0))                     
+    # these are to be the coordinates that we translate the pdb of the residues to to build the glycan
+    ###################### testcode -not quite working, maybe need to not remove the centre of mass
+    f=open('Man.pdb')
+lines=f.readlines()
+f.close()
+lines
+for l in lines:
+    x=l.split()[5]
+    y=l.split()[6]
+    z=l.split()[7]
+    xList.append(float(x))
+    yList.append(float(y))
+    zList.append(float(z))
+xList=[]
+yList=[]
+zList=[]
+for l in lines:
+    x=l.split()[5]
+    y=l.split()[6]
+    z=l.split()[7]
+    xList.append(float(x))
+    yList.append(float(y))
+    zList.append(float(z))
+xList
+import numpy as np
+np.mean(xList)
+newCoords=[]
+coords=[0,5,0]
+for i in range(len(xList)):
+    print(xList[i]-np.mean(xList)+coords[0])
+for i in range(len(xList)):
+    newCoords.append(xList[i]-np.mean(xList)+coords[0])
+newX=newCoords
+newY=[]
+for i in range(len(yList)):
+    newCoords.append(yList[i]-np.mean(yList)+coords[1])
+for i in range(len(yList)):
+    newY.append(yList[i]-np.mean(yList)+coords[1])
+newY
+newX
+newX=newX[:4]
+newX
+newY
+newZ=[]
+for i in range(len(zList)):
+    newZ.append(zList[i]-np.mean(zList)+coords[2])
+newZ
+newLines=[]
+lines
+for i in range(len(lines)):
+    l=lines[i]
+    newLines.append('%s%8.3f%8.3f%8.3f%s\n'%(l[:26],newX[i],newY[i],newZ[i],l[55:]))
+newLines
+f=open('test-man.pdb','w')
+for l in newLines:
+    f.write(l)
+f.close()
+
+            # link to the core here -- what is the bond type?
+            
     ### need to add in a bit to restrict the probabilityDict here to only allow suitable additions, and then can remove the later part that attempt to do this ###
 
     core=coreDict['%s-%s'%(args.glycanType,args.nType)] # check itp and pdb names match this
