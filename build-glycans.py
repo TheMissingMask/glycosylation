@@ -474,8 +474,12 @@ if args.glycanType=='N':
     a=glycan
     numbers=re.compile(r'([a|b]\d)')
     a=numbers.sub(r'(\1)',a)
-    print(a)
+    glycanToAdd=a
     ####test-N.py ends here####
+    
+    #how do we use this string to build the glycan?
+    #test case example is:   Galb4GlcNAcb2Mana6(Galb4GlcNAcb2Mana3)Manb4GlcNAcb4GlcNAc
+    
     
     ### need to add in a bit to restrict the probabilityDict here to only allow suitable additions, and then can remove the later part that attempt to do this ###
 
